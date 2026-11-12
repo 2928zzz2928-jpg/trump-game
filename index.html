@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TRUMP CARD GACHA + TOWER DEFENSE</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:Arial,sans-serif;
+  background:radial-gradient(circle at top,#243a73,#080b17 70%);
+  color:white;min-height:100vh
+}
+.wrap{max-width:1100px;margin:auto;padding:18px}
+h1{margin:0;font-size:30px}
+.sub{opacity:.7;margin:5px 0 15px}
+.top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.stats{display:flex;gap:7px;flex-wrap:wrap}
+.stat{
+  background:#ffffff15;border:1px solid #ffffff25;
+  padding:9px 13px;border-radius:12px
+}
+button{
+  border:0;border-radius:11px;padding:11px 14px;
+  font-weight:bold;cursor:pointer;margin:3px
+}
+button:hover{filter:brightness(1.1)}
+.blue{background:#20a8ff}.gold{background:#ffd83d}
+.purple{background:#a65cff;color:white}.red{background:#ff5967;color:white}
+.green{background:#35d69b}.gray{background:#ddd}
+.controls{margin:12px 0}
+.panel{
+  background:#0007;border:1px solid #ffffff20;
+  border-radius:16px;padding:14px;margin-top:14px
+}
+#stage{
+  min-height:420px;display:flex;
+  justify-content:center;align-items:center
+}
+.card{
+  width:310px;min-height:410px;background:#eee;color:#111;
+  border-radius:23px;padding:14px;box-shadow:0 20px 60px #000b
+}
+.pic{
+  height:230px;margin-top:25px;border-radius:18px;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;font-size:80px;
+  background:linear-gradient(135deg,#d9e5ff,#fff)
+}
+.pic small{font-size:16px}
+.name{font-size:25px;font-weight:900;margin-top:10px}
+.collection{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:9px
+}
+.item{
+  background:#ffffff12;border:1px solid #ffffff20;
+  border-radius:12px;padding:10px;text-align:center
+}
+.item .emoji{font-size:45px}
+.actions{margin-top:7px}
+.log{max-height:170px;overflow:auto;line-height:1.7}
+.hidden{display:none}
+#tdBoard{
+  position:relative;height:430px;overflow:hidden;
+  background:#18251b;border-radius:15px;
+  border:2px solid #ffffff20
+}
+.path{
+  position:absolute;left:0;right:0;top:180px;height:70px;
+  background:#806b4b;border-top:3px solid #aa9165;
+  border-bottom:3px solid #aa9165
+}
+.base{
+  position:absolute;right:15px;top:185px;
+  width:60px;height:60px;border-radius:50%;
+  background:#36d69b;display:flex;
+  align-items:center;justify-content:center;
+  font-size:30px
+}
+.enemy{
+  position:absolute;top:197px;width:38px;height:38px;
+  border-radius:50%;background:#e44;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px
+}
+.tower{
+  position:absolute;width:60px;height:60px;
+  border-radius:15px;background:#365cff;
+  border:3px solid white;
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;z-index:5
+}
+.hp{
+  position:absolute;top:-10px;left:0;width:100%;
+  height:6px;background:#333;border-radius:5px
+}
+.hp span{display:block;height:100%;background:#35d69b}
+.tdInfo{
+  display:flex;gap:10px;flex-wrap:wrap;margin:8px 0
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<div class="top">
+<div>
+<h1>🇺🇸 TRUMP CARD GACHA</h1>
+<div class="sub">가상의 병맛 카드깡 + TRUMP TOWER DEFENSE</div>
+</div>
+
+<div class="stats">
+<div class="stat">💰 <b id="coins">1000</b></div>
+<div class="stat">🍀 운 Lv.<b id="luck">0</b></div>
+<div class="stat">🎴 보유 <b id="count">0</b></div>
+<div class="stat">💳 빚 <b id="debt">0</b></div>
+</div>
+</div>
+
+<div class="controls">
+<button class="blue" onclick="pull(1)">🎴 1장 뽑기 · 100</button>
+<button class="purple" onclick="pull(10)">🔥 10연차 · 900</button>
+<button class="gold" onclick="upgradeLuck()">🍀 운 업그레이드</button>
+<button class="green" onclick="showCollection()">🎴 인벤토리</button>
+<button class="blue" onclick="openLoan()">🏦 돈 빌리기</button>
+<button class="red" onclick="repay()">💸 빚 상환</button>
+<button class="purple" onclick="openTD()">🏰 타워 디펜스</button>
+<button class="red" onclick="resetGame()">↻ 초기화</button>
+</div>
+
+<div id="stage">
+<div style="opacity:.6;font-size:20px">
+카드팩을 개봉해 보세요!
+</div>
+</div>
+
+<div class="panel">
+<h2>📜 최근 기록</h2>
+<div id="log" class="log">아직 기록이 없습니다.</div>
+</div>
+
+<div class="panel hidden" id="inventoryPanel">
+<h2>🎴 카드 보관함</h2>
+
+<div style="margin-bottom:10px">
+<button class="gold" onclick="selectAll()">☑ 전체 선택</button>
+<button class="gray" onclick="clearSelect()">□ 선택 해제</button>
+<button class="red" onclick="sellSelected()">💰 선택 카드 일괄 판매</button>
+</div>
+
+<div id="collection" class="collection"></div>
+</div>
+
+<div class="panel hidden" id="loanPanel">
+<h2>🏦 대출</h2>
+<p id="loanText"></p>
+<button class="blue" onclick="borrow()">💰 1,000코인 빌리기</button>
+<button class="red" onclick="repay()">💸 상환하기</button>
+</div>
+
+<div class="panel hidden" id="tdPanel">
+<h2>🏰 TRUMP TOWER DEFENSE</h2>
+
+<div class="tdInfo">
+<div>🌊 웨이브: <b id="wave">0</b></div>
+<div>❤️ 기지: <b id="baseHP">20</b></div>
+<div>💰 코인: <b id="tdCoins">0</b></div>
+<div>💀 처치: <b id="kills">0</b></div>
+</div>
+
+<div>
+<button class="green" onclick="startWave()">▶ 웨이브 시작</button>
+<button class="gold" onclick="upgradeTowers()">🆙 타워 업그레이드</button>
+<button class="gray" onclick="closeTD()">닫기</button>
+</div>
+
+<p style="opacity:.7">
+보유 카드를 타워로 자동 배치해서 적을 막습니다.
+</p>
+
+<div id="tdBoard">
+<div class="path"></div>
+<div class="base">🏰</div>
+</div>
+</div>
+
+</div>
+
+<script>
+
+const cards=[];
+
+/* 100종류 카드 생성 */
+const names=[
+"기본 트럼프","선글라스 트럼프","골든 트럼프","메가 트럼프",
+"연설왕 트럼프","머니 트럼프","타워 트럼프","대통령 트럼프",
+"빅맥 트럼프","밈의 제왕"
+];
+
+const emojis=["🇺🇸","😎","👑","🦅","🎤","💰","🏙️","🇺🇸","🍔","🤣"];
+
+for(let i=1;i<=100;i++){
+
+ let rarity;
+
+ if(i===100) rarity="SECRET";
+ else if(i>97) rarity="UR";
+ else if(i>90) rarity="SSR";
+ else if(i>75) rarity="SR";
+ else if(i>45) rarity="R";
+ else rarity="N";
+
+ cards.push({
+  id:i,
+  r:rarity,
+  name:
+   i<=10 ? names[i-1] :
+   "트럼프 밈 카드 #"+i,
+  emoji:
+   i<=10 ? emojis[i-1] :
+   emojis[Math.floor(Math.random()*emojis.length)],
+  stat:50+Math.floor(Math.random()*51),
+  price:
+   rarity==="SECRET"?1500:
+   rarity==="UR"?700:
+   rarity==="SSR"?400:
+   rarity==="SR"?200:
+   rarity==="R"?110:50
+ });
+}
+
+let coins=1000;
+let luck=0;
+let count=0;
+let inventory={};
+let selected={};
+
+let debt=0;
+let lender="";
+
+let wave=0;
+let baseHP=20;
+let kills=0;
+let tdRunning=false;
+let towers=[];
+let enemies=[];
+
+function update(){
+
+ document.getElementById("coins").textContent=coins;
+ document.getElementById("luck").textContent=luck;
+ document.getElementById("count").textContent=count;
+ document.getElementById("debt").textContent=debt;
+
+ document.getElementById("tdCoins").textContent=coins;
+ document.getElementById("wave").textContent=wave;
+ document.getElementById("baseHP").textContent=baseHP;
+ document.getElementById("kills").textContent=kills;
+}
+
+function log(text){
+
+ const el=document.getElementById("log");
+ el.innerHTML=text+"<br>"+el.innerHTML;
+}
+
+/* ================= 카드 뽑기 ================= */
+
+function chancePick(){
+
+ let u=Math.random();
+
+ let boost=luck*0.012;
+
+ u-=Math.min(boost,0.18);
+
+ if(u<0.002)return cards[99];
+ if(u<0.012)return cards[98+Math.floor(Math.random()*2)];
+ if(u<0.055)return cards[90+Math.floor(Math.random()*8)];
+ if(u<0.15)return cards[75+Math.floor(Math.random()*15)];
+ if(u<0.36)return cards[45+Math.floor(Math.random()*30)];
+
+ return cards[Math.floor(Math.random()*45)];
+}
+
+function pull(n){
+
+ if(debt>0){
+  alert("💳 빚이 있는 동안에는 카드팩을 구매할 수 없습니다!");
+  return;
+ }
+
+ let cost=n===10?900:100;
+
+ if(coins<cost){
+  alert("코인이 부족합니다!");
+  return;
+ }
+
+ coins-=cost;
+
+ let got=[];
+
+ for(let i=0;i<n;i++){
+
+  let c=chancePick();
+
+  got.push(c);
+
+  inventory[c.id]=(inventory[c.id]||0)+1;
+  count++;
+ }
+
+ show(got[got.length-1]);
+
+ log(
+  got.map(c=>
+   "🎴 "+c.r+" "+c.name+" · 🍔"+c.stat
+  ).join(" | ")
+ );
+
+ update();
+}
+
+function show(c){
+
+ document.getElementById("stage").innerHTML=`
+ <div class="card">
+  <div style="font-size:20px;font-weight:bold">
+   ${c.r}
+  </div>
+
+  <div class="pic">
+   ${c.emoji}
+   <small>${c.name}</small>
+  </div>
+
+  <div class="name">${c.name}</div>
+
+  <p>
+   ⭐ 등급: ${c.r}<br>
+   🍔 뚱뚱력: <b>${c.stat}</b>/100<br>
+   💵 판매가: <b>${c.price}</b> 코인
+  </p>
+
+  <button class="blue"
+   onclick="useTower(${c.id})">
+   🏰 타워로 사용
+  </button>
+ </div>`;
+}
+
+/* ================= 인벤토리 ================= */
+
+function showCollection(){
+
+ document.getElementById("inventoryPanel")
+  .classList.remove("hidden");
+
+ renderCollection();
+}
+
+function renderCollection(){
+
+ let el=document.getElementById("collection");
+
+ let owned=cards.filter(c=>inventory[c.id]);
+
+ if(!owned.length){
+  el.innerHTML="<div>카드가 없습니다.</div>";
+  return;
+ }
+
+ el.innerHTML=owned.map(c=>`
+
+ <div class="item">
+
+  <div class="emoji">${c.emoji}</div>
+
+  <b>${c.name}</b>
+
+  <small>
+   ${c.r} · ${inventory[c.id]}장<br>
+   판매가 ${c.price}
+  </small>
+
+  <div>
+   <input type="checkbox"
+    ${selected[c.id]?"checked":""}
+    onchange="toggleSelect(${c.id})">
+   선택
+  </div>
+
+  <div class="actions">
+   <button class="gold"
+    onclick="sellCard(${c.id})">
+    1장 판매
+   </button>
+
+   <button class="purple"
+    onclick="useTower(${c.id})">
+    🏰 타워
+   </button>
+  </div>
+
+ </div>
+
+ `).join("");
+}
+
+function toggleSelect(id){
+
+ selected[id]=!selected[id];
+
+ renderCollection();
+}
+
+function selectAll(){
+
+ cards.forEach(c=>{
+  if(inventory[c.id])
+   selected[c.id]=true;
+ });
+
+ renderCollection();
+}
+
+function clearSelect(){
+
+ selected={};
+
+ renderCollection();
+}
+
+function sellCard(id){
+
+ if(!inventory[id])return;
+
+ let c=cards.find(x=>x.id===id);
+
+ inventory[id]--;
+ count--;
+ coins+=c.price;
+
+ if(inventory[id]<=0)
+  delete inventory[id];
+
+ log("💰 "+c.name+" 판매 +"+c.price+"코인");
+
+ renderCollection();
+ update();
+}
+
+/* 일괄 판매 */
+
+function sellSelected(){
+
+ let total=0;
+ let amount=0;
+
+ for(let id in selected){
+
+  if(!selected[id]||!inventory[id])continue;
+
+  let c=cards.find(x=>x.id==id);
+
+  let qty=inventory[id];
+
+  total+=c.price*qty;
+  amount+=qty;
+
+  delete inventory[id];
+ }
+
+ if(amount===0){
+  alert("선택한 카드가 없습니다!");
+  return;
+ }
+
+ count-=amount;
+ coins+=total;
+ selected={};
+
+ log("💰 일괄 판매: "+amount+"장 / +"+total+"코인");
+
+ renderCollection();
+ update();
+}
+
+/* ================= 운 ================= */
+
+function upgradeLuck(){
+
+ let cost=300+luck*250;
+
+ if(coins<cost){
+  alert("코인이 부족합니다!");
+  return;
+ }
+
+ coins-=cost;
+ luck++;
+
+ log("🍀 운 Lv."+luck+" 달성!");
+
+ update();
+}
+
+/* ================= 대출 ================= */
+
+function openLoan(){
+
+ document.getElementById("loanPanel")
+  .classList.remove("hidden");
+
+ updateLoan();
+}
+
+function updateLoan(){
+
+ let text;
+
+ if(debt===0)
+  text="현재 빚 없음";
+ else
+  text=
+   "현재 빚: <b>"+debt+
+   " 코인</b><br>"+
+   "대출기관: "+lender;
+
+ document.getElementById("loanText").innerHTML=text;
+}
+
+function borrow(){
+
+ if(debt>0){
+  alert("🔒 이미 빚이 있습니다!");
+  return;
+ }
+
+ coins+=1000;
+
+ if(Math.random()<0.10){
+
+  lender="😱 고리대금업자";
+  debt=1800;
+
+  log("😱 고리대금업자 당첨! 1,800코인 상환");
+
+ }else{
+
+  lender="🏦 일반 은행";
+  debt=1100;
+
+  log("🏦 일반 은행 대출! 1,100코인 상환");
+
+ }
+
+ updateLoan();
+ update();
+}
+
+function repay(){
+
+ if(debt===0){
+  alert("현재 빚이 없습니다.");
+  return;
+ }
+
+ if(coins<debt){
+  alert(
+   "코인이 부족합니다!\n"+
+   "필요: "+debt+
+   "\n현재: "+coins
+  );
+  return;
+ }
+
+ coins-=debt;
+
+ log("💸 대출 상환 완료 -"+debt+"코인");
+
+ debt=0;
+ lender="";
+
+ updateLoan();
+ update();
+}
+
+/* ================= 타워 디펜스 ================= */
+
+function openTD(){
+
+ document.getElementById("tdPanel")
+  .classList.remove("hidden");
+
+ if(towers.length===0)
+  autoPlaceTowers();
+
+ update();
+}
+
+function closeTD(){
+
+ document.getElementById("tdPanel")
+  .classList.add("hidden");
+}
+
+function autoPlaceTowers(){
+
+ let owned=cards.filter(c=>inventory[c.id]);
+
+ owned.slice(0,6).forEach((c,i)=>{
+
+  towers.push({
+   card:c,
+   x:70+i*105,
+   y:90,
+   level:1,
+   cooldown:0
+  });
+
+ });
+
+ renderTowers();
+}
+
+function useTower(id){
+
+ let c=cards.find(x=>x.id===id);
+
+ document.getElementById("tdPanel")
+  .classList.remove("hidden");
+
+ let x=60+(towers.length%7)*120;
+ let y=80+Math.floor(towers.length/7)*100;
+
+ towers.push({
+  card:c,
+  x:x,
+  y:y,
+  level:1,
+  cooldown:0
+ });
+
+ renderTowers();
+
+ log("🏰 "+c.name+"을 타워로 배치!");
+
+ update();
+}
+
+function renderTowers(){
+
+ let board=document.getElementById("tdBoard");
+
+ board.querySelectorAll(".tower").forEach(x=>x.remove());
+
+ towers.forEach((t,i)=>{
+
+  let div=document.createElement("div");
+
+  div.className="tower";
+
+  div.style.left=t.x+"px";
+  div.style.top=t.y+"px";
+
+  div.innerHTML=
+   t.card.emoji+
+   "<div class='hp'><span style='width:100%'></span></div>";
+
+  div.title=
+   t.card.name+
+   "\nLv."+t.level+
+   "\n공격력 "+towerDamage(t);
+
+  board.appendChild(div);
+ });
+}
+
+function towerDamage(t){
+
+ return Math.floor(
+  t.card.stat*(1+t.level*0.25)
+ );
+}
+
+function upgradeTowers(){
+
+ let cost=200+towers.length*100;
+
+ if(coins<cost){
+  alert("타워 업그레이드 비용 부족!");
+  return;
+ }
+
+ coins-=cost;
+
+ towers.forEach(t=>{
+  t.level++;
+ });
+
+ log("🆙 모든 타워 강화!");
+
+ renderTowers();
+ update();
+}
+
+/* ================= 웨이브 ================= */
+
+function startWave(){
+
+ if(tdRunning)return;
+
+ if(baseHP<=0){
+  alert("기지가 파괴됐습니다!");
+  return;
+ }
+
+ wave++;
+ tdRunning=true;
+
+ let amount=5+wave*2;
+
+ log("🌊 웨이브 "+wave+" 시작!");
+
+ for(let i=0;i<amount;i++){
+
+  setTimeout(()=>{
+   spawnEnemy(wave);
+  },i*700);
+ }
+
+ setTimeout(()=>{
+  tdRunning=false;
+ },amount*700+3000);
+
+ update();
+}
+
+function spawnEnemy(w){
+
+ let board=document.getElementById("tdBoard");
+
+ let enemy=document.createElement("div");
+
+ enemy.className="enemy";
+ enemy.innerHTML="👹";
+
+ let hp=30+w*12;
+
+ let enemyObj={
+  el:enemy,
+  x:-40,
+  hp:hp,
+  maxHP:hp,
+  speed:0.7+Math.random()*0.4,
+  reward:20+w*4
+ };
+
+ enemies.push(enemyObj);
+
+ board.appendChild(enemy);
+
+ moveEnemy(enemyObj);
+}
+
+function moveEnemy(e){
+
+ if(!e.el)return;
+
+ e.x+=e.speed;
+
+ e.el.style.left=e.x+"px";
+
+ if(e.x>boardWidth()-80){
+
+  e.el.remove();
+
+  enemies=enemies.filter(x=>x!==e);
+
+  baseHP--;
+
+  update();
+
+  return;
+ }
+
+ setTimeout(()=>moveEnemy(e),50);
+}
+
+function boardWidth(){
+
+ return document.getElementById("tdBoard").clientWidth;
+}
+
+/* 자동 공격 */
+
+setInterval(()=>{
+
+ if(!tdRunning)return;
+
+ towers.forEach(t=>{
+
+  let target=null;
+
+  let best=-Infinity;
+
+  enemies.forEach(e=>{
+
+   if(!e.el)return;
+
+   let dist=Math.abs(
+    e.x-(t.x+30)
+   );
+
+   if(dist<260 && e.x>best){
+    best=e.x;
+    target=e;
+   }
+
+  });
+
+  if(target){
+
+   target.hp-=towerDamage(t);
+
+   if(target.hp<=0){
+
+    if(target.el)
+     target.el.remove();
+
+    enemies=enemies.filter(
+     e=>e!==target
+    );
+
+    coins+=target.reward;
+    kills++;
+
+    log(
+     "💥 적 처치 +"+
+     target.reward+"코인"
+    );
+
+    update();
+   }
+  }
+
+ });
+
+},700);
+
+/* ================= 저장 ================= */
+
+function saveGame(){
+
+ localStorage.setItem(
+  "trumpGame",
+  JSON.stringify({
+   coins,luck,count,
+   inventory,debt,lender,
+   wave,baseHP,kills
+  })
+ );
+}
+
+function loadGame(){
+
+ try{
+
+  let d=JSON.parse(
+   localStorage.getItem("trumpGame")
+  );
+
+  if(!d)return;
+
+  coins=d.coins??1000;
+  luck=d.luck??0;
+  count=d.count??0;
+  inventory=d.inventory??{};
+  debt=d.debt??0;
+  lender=d.lender??"";
+  wave=d.wave??0;
+  baseHP=d.baseHP??20;
+  kills=d.kills??0;
+
+ }catch(e){}
+}
+
+setInterval(saveGame,2000);
+
+/* ================= 초기화 ================= */
+
+function resetGame(){
+
+ if(!confirm(
+  "카드, 코인, 빚, 진행도를 전부 초기화할까요?"
+ ))return;
+
+ localStorage.removeItem("trumpGame");
+
+ coins=1000;
+ luck=0;
+ count=0;
+ inventory={};
+ selected={};
+ debt=0;
+ lender="";
+ wave=0;
+ baseHP=20;
+ kills=0;
+ towers=[];
+ enemies=[];
+
+ document.getElementById("log").innerHTML=
+  "아직 기록이 없습니다.";
+
+ document.getElementById("inventoryPanel")
+  .classList.add("hidden");
+
+ document.getElementById("loanPanel")
+  .classList.add("hidden");
+
+ document.getElementById("tdPanel")
+  .classList.add("hidden");
+
+ document.getElementById("stage").innerHTML=
+  "<div style='opacity:.6;font-size:20px'>카드팩을 개봉해 보세요!</div>";
+
+ update();
+}
+
+loadGame();
+update();
+
+</script>
+</body>
+</html>
